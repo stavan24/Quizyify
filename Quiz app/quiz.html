@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz App</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* NAVBAR */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 65px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    z-index: 1000;
+}
+
+.nav-logo {
+    font-size: 22px;
+    font-weight: 600;
+    color: #4caf50;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 25px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #333;
+    font-size: 16px;
+    position: relative;
+    transition: 0.3s;
+}
+
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 0;
+    height: 2px;
+    background: #4caf50;
+    transition: 0.3s;
+}
+
+.nav-links a:hover::after {
+    width: 100%;
+}
+
+/* Push content down because navbar is fixed */
+body {
+    padding-top: 80px;
+}
+
+
+        .container {
+            width: 400px;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .question {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .options button {
+            width: 100%;
+            background: #ececec;
+            border: none;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        .options button:hover {
+            background: #dcdcdc;
+        }
+
+        .next-btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background: #4caf50;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            font-size: 18px;
+            display: none;
+        }
+
+        .next-btn:hover {
+            background: #45a049;
+        }
+
+        .result {
+            display: none;
+            text-align: center;
+        }
+
+        .result h2 {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+    <div class="nav-logo">Quizify</div>
+
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="quiz.html">Quiz</a></li>
+        <li><a href="about.html">About</a></li>
+    </ul>
+</nav>
+
+
+    <div class="container">
+        <h2>Quiz App</h2>
+
+        <div class="quiz-box">
+            <p class="question">Loading question...</p>
+
+            <div class="options"></div>
+
+            <button class="next-btn">Next Question</button>
+        </div>
+
+        <div class="result">
+            <h2>Your Score</h2>
+            <p id="score-text" class="score-text"></p>
+            <button onclick="location.reload()" class="next-btn" style="display:block;">Restart</button>
+        </div>
+    </div>
+
+    <script>
+        const questionEl = document.querySelector(".question");
+        const optionsEl = document.querySelector(".options");
+        const nextBtn = document.querySelector(".next-btn");
+        const resultBox = document.querySelector(".result");
+        const quizBox = document.querySelector(".quiz-box");
+        const scoreText = document.querySelector(".score-text");
+
+        let currentQuestion = 0;
+        let score = 0;
+        let questions = [];
+
+        async function loadQuestions() {
+            const res = await fetch(
+                "https://opentdb.com/api.php?amount=10&type=multiple"
+            );
+            const data = await res.json();
+            questions = data.results;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            nextBtn.style.display = "none";
+            const q = questions[currentQuestion];
+
+            let correct = q.correct_answer;
+            let answers = [...q.incorrect_answers, correct];
+
+           
+            answers.sort(() => Math.random() - 0.5);
+
+            questionEl.innerHTML = q.question;
+            optionsEl.innerHTML = "";
+
+            answers.forEach((opt) => {
+                const btn = document.createElement("button");
+                btn.innerHTML = opt;
+                btn.onclick = () => checkAnswer(btn, correct);
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(btn, correct) {
+            const options = document.querySelectorAll(".options button");
+
+            options.forEach((o) => (o.disabled = true));
+
+            if (btn.innerHTML === correct) {
+                btn.style.background = "#4caf50";
+                btn.style.color = "#fff";
+                score++;
+            } else {
+                btn.style.background = "#f44336";
+                btn.style.color = "#fff";
+
+                options.forEach((o) => {
+                    if (o.innerHTML === correct) {
+                        o.style.background = "#4caf50";
+                        o.style.color = "#fff";
+                    }
+                });
+            }
+
+            nextBtn.style.display = "block";
+        }
+
+        nextBtn.addEventListener("click", () => {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        });
+
+        function showResult() {
+            quizBox.style.display = "none";
+            resultBox.style.display = "block";
+            scoreText.innerHTML = `You scored <b>${score}</b> out of <b>${questions.length}</b>`;
+        }
+
+        loadQuestions()
+    </script>
+
+</body>
+</html>
